@@ -1,0 +1,32 @@
+# scene: late_office
+# 야근 중 김대리와 나누는 대화. 눈치(nunchi)가 높으면 숨겨진 선택지가 열린다.
+name: late_office
+bg: office_night
+
+say 김대리: 야, 오늘 마감 늦었잖아. 네가 책임 좀 져.
+say: (주인공) 공기가 차갑다. 뭐라도 말해야 한다.
+
+choice:
+  "사과한다" -> apologize
+  "침묵한다" -> silent
+  [nunchi>=6] "분위기 파악하고 가볍게 넘긴다" -> smooth
+
+apologize:
+  rel 김대리 favor -2
+  stat stress +3
+  goto late_end
+
+silent:
+  rel 김대리 trust -1
+  goto late_end
+
+smooth:
+  flag read_room 1
+  rel 김대리 trust +3
+  rel 김대리 respect +1
+  card add 커피
+  goto late_end
+
+late_end:
+  msg 잠시 후, 형광등이 꺼졌다.
+  return

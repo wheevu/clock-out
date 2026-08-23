@@ -1,0 +1,25 @@
+# scene: boss_juin
+# 사장(주인)과의 결전 전야. 선택에 따라 전투가 시작된다.
+name: boss_juin
+bg: ceo_room
+
+say 주인: 이번 분기 실적, 다 네 탓이다. 퇴근은 꿈도 꾸지 마.
+say: (주인공) 더는 뒤로 물러날 곳이 없다.
+
+choice:
+  "정면 돌파한다" -> charge
+  "시간을 끈다" -> stall
+
+charge:
+  rel 주인 respect +2
+  combat_start 주인
+  goto boss_end
+
+stall:
+  stat nunchi +1
+  combat_start 주인
+  goto boss_end
+
+boss_end:
+  schedule 18:00 EV_END_CAMPAIGN
+  return
