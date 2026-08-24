@@ -34,6 +34,7 @@ void uia_init(void) {
  * scene overrides (3D world only)
  * ===================================================================== */
 void uia_scene_office(double t) {
+    rndr_begin();   /* clear palette fb + depth so frames never leak */
     rndr_set_camera((Vec3){0, 1.6, 5}, (Vec3){0, 0.6, 0});
 
     /* floor */
@@ -67,6 +68,7 @@ void uia_scene_office(double t) {
 
 void uia_scene_boss(double t) {
     (void)t;
+    rndr_begin();   /* clear palette fb + depth so frames never leak */
     rndr_set_camera((Vec3){0, 1.6, 5}, (Vec3){0, 0.6, 0});
 
     /* floor + dim indigo back wall */
@@ -271,10 +273,19 @@ void uia_combat(double t) {
     if (ps) ui_blit_fit(ps, 24, 100, 48, 80);
     if (bs) ui_blit_fit(bs, 248, 80, 56, 88);
 
-    /* card hand */
+    /* card hand -- fit within RW: shrink stride (overlap) if too wide */
     int hand_n = g_combat.hand_n;
     if (hand_n > 0) {
         int card_w = 52, gap = 6, stride = card_w + gap;
+        int avail = RW - 8;                 /* 4px margin each side */
+        if (hand_n > 0) {
+            int min_stride = 34;            /* widest overlap allowed */
+            while (hand_n * stride - gap > avail && stride > min_stride)
+                stride--;
+            /* if even min_stride is too wide, shrink card width too */
+            if (hand_n * stride - gap > avail)
+                card_w = avail / hand_n - (gap > 0 ? gap : 0);
+        }
         int total = hand_n * stride - gap;
         int xstart = (RW - total) / 2;
         for (int i = 0; i < hand_n; i++) {

@@ -43,6 +43,7 @@ SHOTFILES = $(wildcard $(SHOTDIR)/frame_*.ppm)
 
 shots: $(BIN)/shot
 	@mkdir -p $(SHOTDIR)
+	@rm -f assets/shots/frame_*.ppm        # drop stale frames before a fresh reel
 	@./$(BIN)/shot
 	@echo "frames written to $(SHOTDIR)"
 

@@ -47,7 +47,7 @@ void uia_title(double t);
 void uia_dialogue(double t, const char *speaker, const char *text);
 
 /* Choice: draws dialogue + a vertical list. idx (which option is hovered)
- * can be -1 for none. Returns the hovered label (for a cursor). */
+ * can be -1 for none. */
 void uia_choice(double t, const char *speaker, const char *text,
                 PendingChoice *c, int idx);
 

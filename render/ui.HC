@@ -214,16 +214,22 @@ static void load_manifest(void)
 
         UISprite *s = &g_sprites[g_sprite_n];
         s->w = w; s->h = h;
-        s->rgba = (uint8_t *)malloc((size_t)w * h * 4);
+        /* overflow-safe check: w,h>0 and w*h*4 fits in size_t */
+        if ((size_t)w * (size_t)h > ((size_t)-1) / 4) { continue; }
+        size_t need = (size_t)w * (size_t)h * 4;
+        s->rgba = (uint8_t *)malloc(need);
         if (!s->rgba) continue;
 
         char path[512];
         snprintf(path, sizeof(path), "assets/baked/%s", fname);
         FILE *bf = fopen(path, "rb");
         if (!bf) { free(s->rgba); s->rgba = NULL; continue; }
-        size_t need = (size_t)w * h * 4;
+        /* reject truncated/oversized blobs: must match exactly */
         if (fread(s->rgba, 1, need, bf) != need) {
-            /* partial blob: still keep what we read, mark valid prefix */
+            free(s->rgba); s->rgba = NULL; fclose(bf); continue;
+        }
+        if (fgetc(bf) != EOF) {           /* blob larger than declared */
+            free(s->rgba); s->rgba = NULL; fclose(bf); continue;
         }
         fclose(bf);
         strncpy(g_skeys[g_sprite_n], key, 63);
@@ -269,11 +275,15 @@ void ui_present(const char *ppm_path)
             if (a == 0) {
                 out_r = sr; out_g = sg; out_b = sb;
             } else if (a == 255) {
+                /* opaque overlay: premultiplied == straight when a==255 */
                 out_r = or_; out_g = og; out_b = ob;
             } else {
-                out_r = (uint8_t)((or_*a + sr*(255 - a)) / 255);
-                out_g = (uint8_t)((og*a + sg*(255 - a)) / 255);
-                out_b = (uint8_t)((ob*a + sb*(255 - a)) / 255);
+                /* overlay stores premultiplied RGB (see blend). Composite over
+                 * the opaque scene once: out = premul + scene*(1-a). Do NOT
+                 * multiply or_ by a again (that would double-apply alpha). */
+                out_r = (uint8_t)(or_ + (uint32_t)sr * (255 - a) / 255);
+                out_g = (uint8_t)(og + (uint32_t)sg * (255 - a) / 255);
+                out_b = (uint8_t)(ob + (uint32_t)sb * (255 - a) / 255);
             }
             fputc(out_r, f); fputc(out_g, f); fputc(out_b, f);
         }
@@ -375,10 +385,31 @@ void ui_blit_fit(UISprite *s, int x, int y, int w, int h)
 static void draw_glyph_cell(int x, int y, const uint8_t *cell, int size,
                             uint8_t r, uint8_t g, uint8_t b)
 {
-    /* cell is HICES x HICES. Render into an on-screen box of CELL*size px by
-     * nearest sampling the source cell, so Hangul bands stay readable. */
+    /* cell is HICES x HICES. Render into an on-screen box of CELL*size px.
+     * When downsizing (box < HICES, e.g. 16->8) use 2x2 coverage averaging so
+     * strokes are NOT dropped to a sparse lattice; a dst pixel fills when >=
+     * half its source subpixels are on. When >= HICES use nearest sampling. */
     int box = CELL * size;                 /* destination pixel box side */
     if (box < 1) box = 1;
+    if (box < HICES) {
+        int ri = HICES / box;              /* source subpixels per axis */
+        if (ri < 1) ri = 1;
+        for (int j = 0; j < box; j++) {
+            int sy = j * HICES / box;
+            for (int i = 0; i < box; i++) {
+                int sx = i * HICES / box;
+                int on = 0;
+                for (int dy = 0; dy < ri; dy++)
+                    for (int dx = 0; dx < ri; dx++) {
+                        int yy = sy + dy, xx = sx + dx;
+                        if (yy < HICES && xx < HICES && cell[yy * HICES + xx]) on++;
+                    }
+                /* threshold: >= half of the ri*ri subpixels */
+                if (on * 2 >= ri * ri) blend(x + i, y + j, r, g, b, 255);
+            }
+        }
+        return;
+    }
     for (int j = 0; j < box; j++) {
         int sj = j * HICES / box;
         if (sj >= HICES) sj = HICES - 1;
@@ -445,7 +476,8 @@ int ui_text_scaled(int x, int y, const char *utf8, int size,
                    uint8_t r, uint8_t g, uint8_t b)
 {
     int x0 = x;
-    if (!utf8 || size < 1) size = 1;
+    if (!utf8) return 0;
+    if (size < 1) size = 1;
     GStr gs = gstr_from_utf8(utf8);
     for (uint32_t t = 0; t < gs.len; t++) {
         uint16_t tok = gs.tok[t];
@@ -487,6 +519,9 @@ int ui_text_wrap(int x, int y, int w, int h, const char *utf8,
                  uint8_t r, uint8_t g, uint8_t b)
 {
     if (!utf8) return 0;
+    int bottom = y + h;      /* box bottom (exclusive); text may not pass it */
+    if (bottom > RH) bottom = RH;
+    int dy = y;
     int lines = 0;
     char buf[1024]; buf[0] = 0;
     int linew = 0;
@@ -502,17 +537,17 @@ int ui_text_wrap(int x, int y, int w, int h, const char *utf8,
         int ww = ui_text_width(word);
         int spc = (linew > 0) ? ui_text_width(" ") : 0;
         if (linew > 0 && linew + spc + ww > w) {
-            ui_text(x, y, buf, r, g, b);
-            lines++; y += 10;
-            if (y > y + h - CELL) break;   /* ran past box */
+            if (dy + 10 > bottom) break;      /* no room for another line */
+            ui_text(x, dy, buf, r, g, b);
+            lines++; dy += 10;
             buf[0] = 0; linew = 0;
         }
         if (linew > 0) { strncat(buf, " ", sizeof(buf) - strlen(buf) - 1); linew += spc; }
         strncat(buf, word, sizeof(buf) - strlen(buf) - 1);
         linew += ww;
     }
-    if (buf[0]) {
-        ui_text(x, y, buf, r, g, b);
+    if (buf[0] && dy + CELL <= bottom) {
+        ui_text(x, dy, buf, r, g, b);
         lines++;
     }
     return lines;

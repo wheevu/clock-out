@@ -34,14 +34,18 @@ def frame_path(n):
     return os.path.join(SHOTDIR, "frame_%03d.ppm" % n)
 
 
+# The demo reel emits exactly frames 1..40. Only consume those, so stale or
+# misnumbered frame_*N.ppm leftovers from earlier runs never contaminate the GIFs.
+FIRST_FRAME = 1
+LAST_FRAME = 40
+
+
 def list_frames():
-    pat = os.path.join(SHOTDIR, "frame_*.ppm")
     out = []
-    for p in glob.glob(pat):
-        m = re.search(r"frame_(\d+)\.ppm$", p)
-        if m:
-            out.append((int(m.group(1)), p))
-    out.sort(key=lambda t: t[0])
+    for n in range(FIRST_FRAME, LAST_FRAME + 1):
+        p = frame_path(n)
+        if os.path.isfile(p):
+            out.append((n, p))
     return out
 
 
