@@ -1,6 +1,6 @@
 # 퇴근 (Toegeun / "Clock Out")
 
-A Korean 3D deckbuilding office RPG, built from scratch baby. 
+*A Korean 3D deckbuilding office RPG, built from scratch baby.*
 
 This repository is the
 **engine + vertical slice**, implemented in portable C that is 1:1 with the
