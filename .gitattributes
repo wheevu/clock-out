@@ -1,0 +1,9 @@
+# Force GitHub Linguist to classify the engine as HolyC.
+# The repo sources carry the HolyC-style uppercase ".HC" extension, but
+# Linguist maps HolyC to lowercase ".hc" and otherwise guesses ".H"/".h"
+# files as C, so the repo would show up as C. Mark every engine source and
+# header as HolyC so the language bar (and the README's HolyC framing) is
+# accurate. Python/GIF/MD assets stay as their natural languages.
+*.HC linguist-language=HolyC
+*.H  linguist-language=HolyC
+*.h  linguist-language=HolyC
