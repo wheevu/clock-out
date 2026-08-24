@@ -1,14 +1,19 @@
 # 퇴근 (Toegeun / "Clock Out")
 
-A Korean 3D deckbuilding office RPG, built from scratch. This repository is the
+A Korean 3D deckbuilding office RPG, built from scratch baby. 
+
+This repository is the
 **engine + vertical slice**, implemented in portable C that is 1:1 with the
 HolyC/TempleOS design (same structs, event model, determinism rules). The plan
 document lives at `masterplan.md`.
 
-The player is a junior engineer at **성광정보기술** who wakes at 3:17 AM. The
+Premise: The player is a junior engineer at **성광정보기술** who wakes at 3:17 AM. The
 building is impossible. Your job is now a dungeon, your manager is a boss fight,
 and the only way out might be a letter of resignation -- or becoming the
 administrator.
+
+<p align="center"> <img src="assets/shots/reel.gif" width=85%> </p>
+
 
 ## 퇴근
 
@@ -23,8 +28,6 @@ The engine renders every frame itself (`make shots` / `make gif`): a 320x240
 software rasterizer with a dancheong night palette (16 오방색 hue columns x 16
 luminance steps), per-face Lambert shading against moonlight, and view-depth fog
 that swallows the far end of the office into 3:17 AM darkness.
-
-![Full gameplay reel](assets/shots/reel.gif)
 
 | Scene | Clip |
 |---|---|
@@ -87,7 +90,7 @@ Requires a C99 compiler (`cc`/`clang`/`gcc`). All suites print PASS.
   shims (TempleOS `gr`, scancode, `FileRead`) and `<math.h>`/`<stdio.h>` differ;
   the structs, function signatures, and algorithms are identical.
 
-## Not yet built (per the plan's deferral list)
+## Not yet built
 
 Networking, convex-hull physics, full Unicode, skeletal animation, PBR,
 multithreading, ECS. The full 4-act campaign content (Acts II–IV, all NPCs,
@@ -105,5 +108,3 @@ output. It is included for local development and README preview only.
 - **Kenney** - UI, icons, playing cards, particle pack, and fonts, at
   [kenney.nl](https://kenney.nl).
   Released under CC0 (public domain, no attribution required).
-
-Replace these with your own licensed art before shipping.
