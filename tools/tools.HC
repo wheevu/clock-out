@@ -1,16 +1,29 @@
-/* tools/tools.h -- dev debug overlay toolkit for 성광정보기술.
+/* tools.c -- dev debug overlay toolkit for 성광정보기술.
  * No graphics: pure state inspection. Loosely coupled to the narrative
- * module via extern prototypes (sched_count / campaign_act / msg_count). */
-#ifndef TOOLS_H
-#define TOOLS_H
+ * module via extern prototypes (sched_count / campaign_act / msg_count).
+ * Recreated after the bad rename; implements tools.H. */
+#include "tools.H"
+#include <stdio.h>
 
-/* Toggle the overlay on/off. */
-void tool_toggle(void);
-/* Current overlay state. */
-int  tool_is_on(void);
-/* Print a full state dump to stdout. */
-void tool_dump_state(void);
-/* Called once per frame; prints the one-line HUD when enabled. */
-void tool_frame(void);
+static int g_tool_on = 0;
 
-#endif
+/* narrative hooks (provided by the narrative module or test stubs) */
+extern int sched_count(void);
+extern int campaign_act(void);
+extern int msg_count(void);
+
+void tool_toggle(void){ g_tool_on = !g_tool_on; }
+int  tool_is_on(void){ return g_tool_on; }
+
+void tool_dump_state(void){
+  printf("== 성광정보기술 debug dump ==\n");
+  printf("overlay : %s\n", g_tool_on ? "on" : "off");
+  printf("act     : %d\n", campaign_act());
+  printf("sched q : %d\n", sched_count());
+  printf("unread  : %d\n", msg_count());
+}
+
+void tool_frame(void){
+  if(!g_tool_on) return;
+  printf("[T] act=%d sched=%d msg=%d\n", campaign_act(), sched_count(), msg_count());
+}

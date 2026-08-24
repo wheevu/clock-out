@@ -10,6 +10,34 @@
 #define RH 240            /* framebuffer height */
 #define RNDR_NPAL 256     /* palette size       */
 
+/* Palette layout: 16 오방색 (obangsaek) hue columns x 16 luminance steps.
+ * Index = (hueCol << 4) | step, where step 0 = darkest, 15 = brightest.
+ * Scene code should pick a mid step (RNDR_STEP_MID) as "lit average"; the
+ * renderer shades faces brighter/darker and fogs depth, all within the same
+ * hue column so colors never hue-shift. Index 0 is the night background. */
+enum {
+    HUE_CHARCOAL = 0,  /* dark greys   */
+    HUE_TEAL     = 1,  /* 청 cyan      */
+    HUE_JADE     = 2,  /* 벽 jade green*/
+    HUE_VERMILION= 3,  /* 홍 vermilion  */
+    HUE_GOLD     = 4,  /* 황 gold       */
+    HUE_WHITE    = 5,  /* 백 white      */
+    HUE_VIOLET   = 6,  /* 자 violet     */
+    HUE_INDIGO   = 7,  /* 남 indigo     */
+    HUE_PINK     = 8,  /* 분홍 pink     */
+    HUE_MOSS     = 9,  /* 녹 moss       */
+    HUE_ORANGE   = 10, /* 주 orange     */
+    HUE_BROWN    = 11, /* 목 brown      */
+    HUE_SLATE    = 12, /* slate         */
+    HUE_ROSE     = 13, /* rose          */
+    HUE_INK      = 14, /* 흑 ink         */
+    HUE_TAN      = 15, /* tan           */
+};
+#define RNDR_COL(hue, step)  ((uint8_t)((((hue) << 4) | (step)) & 0xFF))
+#define RNDR_STEP_MID        8
+#define RNDR_STEP_DARK       4
+#define RNDR_STEP_LIT        11
+
 /* A triangle: 3 world-space positions + a flat base color (0..255). */
 typedef struct {
     Vec3 p[3];

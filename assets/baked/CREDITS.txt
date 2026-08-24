@@ -1,0 +1,12 @@
+CREDITS — baked sprite sources (퇴근 / clock-out, local dev only)
+
+These assets are bundled only for local development and README use.
+They remain the property of their respective authors under the listed packs.
+
+- char_player: characters/minji.png  [LimeZu Modern Interiors — characters]  (friendly office worker (standing front-facing frame))
+- char_boss: characters/yunjin.png  [LimeZu Modern Interiors — characters]  (the boss '주인' (distinct character))
+- char_kim: characters/kazuha.png  [LimeZu Modern Interiors — characters]  (senior colleague '김대리')
+- icon_star: ui/kenney_game-icons/PNG/White/1x/star.png  [Kenney CC0 — game-icons]  (small star icon)
+- fx_spark: vfx/kenney_particle-pack/PNG (Transparent)/spark_01.png  [Kenney CC0 — particle-pack]  (small spark particle (transparent variant))
+- card_frame: ui/kenney_playing-cards-pack/PNG/Cards (medium)/card_back.png  [Kenney CC0 — playing-cards-pack]  (card back used as a frame placeholder)
+

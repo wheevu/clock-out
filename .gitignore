@@ -1,2 +1,4 @@
 bin/
 *.o
+# intermediate PPM frames from `make shots` (the assembled GIFs are kept)
+assets/shots/*.ppm

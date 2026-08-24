@@ -1,0 +1,6 @@
+char_player 48 48 char_player.blob
+char_boss 48 48 char_boss.blob
+char_kim 48 48 char_kim.blob
+icon_star 32 32 icon_star.blob
+fx_spark 32 31 fx_spark.blob
+card_frame 32 32 card_frame.blob

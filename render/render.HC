@@ -12,9 +12,41 @@
 /* near plane (homogeneous w) epsilon; verts with w <= this are behind the eye. */
 #define RNDR_NEAR_W 1e-4
 
+/* Lighting / fog tuning. Index 0 is the background; palette entries are laid
+ * out as hue columns of 16 luminance steps each (index = hueCol*16 + step),
+ * so a face's Lambert shade and per-pixel depth fog can move within a column
+ * and always stay on the same hue. */
+#define RNDR_PAL_STEP  16          /* luminance steps per hue column  */
+#define RNDR_SHADE_SCALE 10        /* shade -> step delta per unit diffuse */
+#define RNDR_SHADE_BIAS   5        /* bias so a dark face lands mid-column */
+#define RNDR_FOG_STEPS    7        /* extra darkening at full fog distance */
+#define RNDR_FOG_NEAR     6.0      /* view-space depth where fog starts (units) */
+#define RNDR_FOG_FAR     42.0      /* view-space depth where fog saturates     */
+
 /* local cross product (not in contracts.HC) */
 static Vec3 vcross(Vec3 a, Vec3 b) {
     return (Vec3){ a.y*b.z - a.z*b.y, a.z*b.x - a.x*b.z, a.x*b.y - a.y*b.x };
+}
+
+/* moonlight from upper-left-behind; faces toward it read brighter */
+static Vec3 g_light = {0, 0, 0};
+
+/* HSV -> RGB on 0..255. s,v in [0,1]. */
+static void hsv2rgb(double h, double s, double v, uint8_t *r, uint8_t *g, uint8_t *b) {
+    double c = v * s;
+    double hp = h / 60.0;
+    double x = c * (1.0 - fabs(fmod(hp, 2.0) - 1.0));
+    double rr = 0, gg = 0, bb = 0;
+    if      (hp < 1) { rr = c; gg = x; }
+    else if (hp < 2) { rr = x; gg = c; }
+    else if (hp < 3) { gg = c; bb = x; }
+    else if (hp < 4) { gg = x; bb = c; }
+    else if (hp < 5) { rr = x; bb = c; }
+    else             { rr = c; bb = x; }
+    double m = v - c;
+    *r = (uint8_t)((rr + m) * 255.0 + 0.5);
+    *g = (uint8_t)((gg + m) * 255.0 + 0.5);
+    *b = (uint8_t)((bb + m) * 255.0 + 0.5);
 }
 
 /* ===================== STATIC STATE ===================== */
@@ -28,13 +60,58 @@ static int      g_wire = 0;
 static int      g_inited = 0;
 
 static void build_palette(void) {
-    /* Simple ramp + a few flat-shaded tones used by tests (indices 1..N). */
+    /* Dancheong night palette. 16 hue columns x 16 luminance steps; each
+     * column is an 오방색 (obangsaek) decorative color so level art reads as
+     * Korean painted-wood, and every color sits on one hue horizontally so
+     * per-face shading / fog never hue-shifts. */
+    static const double hue_col[16] = {
+        /* 0 charcoal   */ 210,
+        /* 1 청 (teal)   */ 185,
+        /* 2 벽 (jade)   */ 145,
+        /* 3 홍 (verm.)  */ 8,
+        /* 4 황 (gold)   */ 42,
+        /* 5 백 (white)  */ 210,
+        /* 6 자 (violet) */ 285,
+        /* 7 남 (indigo) */ 232,
+        /* 8 홍 (pink)   */ 330,
+        /* 9 녹 (moss)   */ 90,
+        /*10 주 (orange) */ 24,
+        /*11 목 (brown)  */ 28,
+        /*12 방 (slate)  */ 214,
+        /*13 분 (rose)   */ 350,
+        /*14 흑 (ink)    */ 220,
+        /*15 다 (tan)    */ 34,
+    };
+    /* saturation per column; white/charcoal are near-neutral to glow/fall away */
+    static const double sat_col[16] = {
+        0.06, 0.62, 0.55, 0.78, 0.82, 0.05, 0.50, 0.62,
+        0.58, 0.45, 0.80, 0.42, 0.18, 0.52, 0.30, 0.40,
+    };
+
     for (int i = 0; i < RNDR_NPAL; i++) {
-        uint8_t v = (uint8_t)((i * 255) / (RNDR_NPAL - 1));
-        g_pal[i * 3 + 0] = v;
-        g_pal[i * 3 + 1] = (uint8_t)(255 - v / 2);
-        g_pal[i * 3 + 2] = (uint8_t)(v / 3 + 40);
+        int col = i / RNDR_PAL_STEP;
+        int st  = i % RNDR_PAL_STEP;
+        double s = sat_col[col];
+        double v_min = (col == 0 || col == 5) ? 0.08 : 0.12;
+        double v_max = (col == 5) ? 1.00 : 0.90;
+        double v = v_min + (v_max - v_min) * (double)st / (double)(RNDR_PAL_STEP - 1);
+        /* col 5 (백 white) has a narrow, cool hue so it stays clean */
+        double h = hue_col[col] + ((col == 5) ? 0.0 : 0.0);
+        uint8_t r, g, b;
+        hsv2rgb(h, s, v, &r, &g, &b);
+        g_pal[i * 3 + 0] = r;
+        g_pal[i * 3 + 1] = g;
+        g_pal[i * 3 + 2] = b;
     }
+    /* Index 0 is the pure background: 3:17 AM night, not black. */
+    g_pal[0] = 10; g_pal[1] = 18; g_pal[2] = 30;
+    g_pal[5 * RNDR_PAL_STEP * 3 + 0] = 0; /* col5 step0 = clean white floor */
+    g_pal[5 * RNDR_PAL_STEP * 3 + 1] = 0;
+    g_pal[5 * RNDR_PAL_STEP * 3 + 2] = 0;
+}
+
+static void build_light(void) {
+    g_light = vnorm((Vec3){ -0.45, 0.75, 0.50 });
 }
 
 static void rebuild_vp(void) {
@@ -48,6 +125,7 @@ static void rebuild_vp(void) {
 /* ===================== PUBLIC INIT ===================== */
 void rndr_init(void) {
     build_palette();
+    build_light();
     rebuild_vp();
     memset(g_fb, 0, sizeof(g_fb));
     for (int i = 0; i < RW * RH; i++) g_zb[i] = 1e30;
@@ -106,24 +184,32 @@ static int clip_near(const double cx[8], const double cy[8], const double cz[8],
     return cnt;
 }
 
-/* rasterize one projected polygon (already w>0) using a triangle fan. */
+/* rasterize one projected polygon (already w>0) using a triangle fan.
+ * `color` is the base palette index (hue column + base step); `lightStep` is a
+ * constant per-face Lambert offset, and each pixel applies a depth fog offset
+ * so distant texels fall toward the column's dark end. Final index stays in
+ * the same hue column (col*16 .. col*16+15). */
 static void raster_poly(const double cx[8], const double cy[8], const double cz[8],
-                        const double cw[8], int n, uint8_t color) {
+                        const double cw[8], int n, uint8_t color, int lightStep) {
     if (n < 3) return;
     /* project vertices once */
-    double sx[8], sy[8], dz[8];
+    double sx[8], sy[8], dz[8], iw[8];
     for (int i = 0; i < n; i++) {
         double inv = 1.0 / cw[i];
         double nx = cx[i] * inv, ny = cy[i] * inv, nz = cz[i] * inv;
         sx[i] = (nx * 0.5 + 0.5) * (double)RW;
         sy[i] = (1.0 - (ny * 0.5 + 0.5)) * (double)RH;
-        dz[i] = nz; /* ndc.z, smaller = nearer */
+        dz[i] = nz;  /* ndc.z, smaller = nearer (z-buffer) */
+        iw[i] = inv; /* 1/w is affine in screen space -> perspective-correct depth */
     }
 
+    int col = color / RNDR_PAL_STEP;
+    int baseStep = color % RNDR_PAL_STEP;
+
     for (int f = 1; f + 1 < n; f++) {
-        double ax = sx[0],  ay = sy[0],  az = dz[0];
-        double bx = sx[f],  by = sy[f],  bz = dz[f];
-        double dx = sx[f+1], dy = sy[f+1], dz2 = dz[f+1];
+        double ax = sx[0],  ay = sy[0],  az = dz[0],  ai = iw[0];
+        double bx = sx[f],  by = sy[f],  bz = dz[f],  bi = iw[f];
+        double dx = sx[f+1], dy = sy[f+1], dz2 = dz[f+1], di = iw[f+1];
 
         double minx = floor(fmin(fmin(ax, bx), dx));
         double maxx = ceil (fmax(fmax(ax, bx), dx));
@@ -148,12 +234,21 @@ static void raster_poly(const double cx[8], const double cy[8], const double cz[
                 int idx = y * RW + x;
                 if (zp < g_zb[idx]) {
                     g_zb[idx] = zp;
+                    /* depth fog from perspective-correct view depth (1/w) */
+                    double vdepth = 1.0 / (w0 * ai + w1 * bi + w2 * di);
+                    double fog = (vdepth - RNDR_FOG_NEAR) / (RNDR_FOG_FAR - RNDR_FOG_NEAR);
+                    if (fog < 0.0) fog = 0.0;
+                    if (fog > 1.0) fog = 1.0;
+                    int step = baseStep + lightStep - (int)(fog * RNDR_FOG_STEPS + 0.5);
+                    if (step < 1) step = 1;   /* never resolve to background index 0 */
+                    if (step > RNDR_PAL_STEP - 1) step = RNDR_PAL_STEP - 1;
+                    uint8_t out = (uint8_t)(col * RNDR_PAL_STEP + step);
                     if (g_wire) {
                         /* draw only near edges: cheap wire = top/bottom rows of bbox */
                         int edge = (y == y0) || (y == y1 - 1) || (x == x0) || (x == x1 - 1);
-                        if (edge) g_fb[idx] = color;
+                        if (edge) g_fb[idx] = out;
                     } else {
-                        g_fb[idx] = color;
+                        g_fb[idx] = out;
                     }
                 }
             }
@@ -162,11 +257,33 @@ static void raster_poly(const double cx[8], const double cy[8], const double cz[
 }
 
 static void draw_tri_clip(const double cx[3], const double cy[3],
-                          const double cz[3], const double cw[3], uint8_t color) {
+                          const double cz[3], const double cw[3],
+                          uint8_t color, int lightStep) {
     double oxx[8], oyy[8], ozz[8], oww[8];
     int m = clip_near(cx, cy, cz, cw, 3, oxx, oyy, ozz, oww);
     if (m < 3) return; /* fully behind camera -> culled (writes nothing) */
-    raster_poly(oxx, oyy, ozz, oww, m, color);
+    raster_poly(oxx, oyy, ozz, oww, m, color, lightStep);
+}
+
+/* Face-normal Lambert shading for one triangle. The mesh helpers wind their
+ * faces inward, and the rasterizer draws both sides (no back-face culling), so
+ * flip the normal toward the eye: points away from the eye get their outward
+ * normal. This keeps lighting correct for box/sphere primitives and any
+ * hand-built surface regardless of winding. */
+static int face_light(Vec3 a, Vec3 b, Vec3 c) {
+    Vec3 e1 = vsub(b, a);
+    Vec3 e2 = vsub(c, a);
+    Vec3 n = vcross(e1, e2);
+    double l = vlen(n);
+    if (l < 1e-12) return 0;
+    n = vscale(n, 1.0 / l);
+    /* orient the normal toward the viewer */
+    if (vdot(n, vsub(g_eye, a)) < 0.0) n = vscale(n, -1.0);
+    double diffuse = vdot(n, g_light);
+    if (diffuse < 0.0) diffuse = 0.0;
+    double eff = 0.18 + 0.82 * diffuse;   /* ambient floor so back faces stay visible */
+    int step = (int)((eff - 0.5) * RNDR_SHADE_SCALE + (eff >= 0.5 ? 0.5 : -0.5));
+    return step;
 }
 
 /* ===================== DRAW ===================== */
@@ -178,7 +295,8 @@ void rndr_draw(Mesh m) {
         for (int k = 0; k < 3; k++) {
             mat_transform(g_vp, t->p[k], &cx[k], &cy[k], &cz[k], &cw[k]);
         }
-        draw_tri_clip(cx, cy, cz, cw, t->color);
+        int light = face_light(t->p[0], t->p[1], t->p[2]);
+        draw_tri_clip(cx, cy, cz, cw, t->color, light);
     }
 }
 
