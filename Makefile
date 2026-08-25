@@ -30,11 +30,18 @@ integration: $(BIN) tests/integration_test.HC $(ALL)
 
 check: integration
 	@echo "=== integration ===" && ./$(BIN)/integration
-	@$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/pt  physics/phys.HC $(CORE) tests/physics_test.HC && ./$(BIN)/pt | tail -1
-	@$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/rt  render/render.HC core/math.HC tests/render_test.HC && ./$(BIN)/rt | tail -1
-	@$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/kt  korean/hangul.HC korean/ime.HC core/strings.HC core/math.HC tests/korean_test.HC && ./$(BIN)/kt | tail -1
-	@$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/gt  game/cards.HC game/combat.HC game/ai.HC physics/phys.HC $(CORE) tests/game_test.HC && ./$(BIN)/gt | tail -1
-	@$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/nt  narrative/*.HC $(CORE) tests/narrative_test.HC && ./$(BIN)/nt | tail -1
+	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/pt  physics/phys.HC $(CORE) tests/physics_test.HC
+	@echo "=== physics ===" && ./$(BIN)/pt
+	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/rt  render/render.HC core/math.HC tests/render_test.HC
+	@echo "=== render ===" && ./$(BIN)/rt
+	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/kt  korean/hangul.HC korean/ime.HC core/strings.HC core/math.HC tests/korean_test.HC
+	@echo "=== korean ===" && ./$(BIN)/kt
+	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/gt  game/cards.HC game/combat.HC game/ai.HC physics/phys.HC $(CORE) tests/game_test.HC
+	@echo "=== game ===" && ./$(BIN)/gt
+	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/nt  narrative/*.HC $(CORE) tests/narrative_test.HC
+	@echo "=== narrative ===" && ./$(BIN)/nt
+	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/ut  tests/ui_app_test.HC $(ALL)
+	@echo "=== ui_app smoke ===" && ./$(BIN)/ut
 	@echo "=== linguist hint ===" && (command -v github-linguist >/dev/null && github-linguist 2>/dev/null || echo "HolyC sources: $(words $(ALL)) files")
 
 # ---- visuals ----

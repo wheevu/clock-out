@@ -9,6 +9,12 @@
 #define MAX_HAND  10
 #define N_STATUS  16
 
+/* enemy intent constants (telegraphed one turn before execution) */
+#define COMBAT_INTENT_ATTACK   1
+#define COMBAT_INTENT_BLOCK    2
+#define COMBAT_INTENT_PRESSURE 3
+#define COMBAT_INTENT_GLITCH   4
+
 typedef struct Entity {
   uint32_t id;
   int      hp, maxhp, block;
@@ -34,6 +40,12 @@ typedef struct {
   int      exhaust_n;
   int      turn;
   int      state;   /* 0 running, 1 win, 2 lose */
+
+  /* telegraphed enemy intent (one turn before execution) */
+  int      enemy_intent_type;
+  int      enemy_intent_value;
+  int      last_player_damage;   /* damage the player took (post-modifier) */
+  int      last_enemy_damage;    /* damage the enemy took (post-modifier) */
 } CombatState;
 
 extern CombatState g_combat;

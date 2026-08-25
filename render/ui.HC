@@ -404,8 +404,10 @@ static void draw_glyph_cell(int x, int y, const uint8_t *cell, int size,
                         int yy = sy + dy, xx = sx + dx;
                         if (yy < HICES && xx < HICES && cell[yy * HICES + xx]) on++;
                     }
-                /* threshold: >= half of the ri*ri subpixels */
-                if (on * 2 >= ri * ri) blend(x + i, y + j, r, g, b, 255);
+                /* Preserve any covered stroke when reducing the 16px Korean
+                 * atlas to the 8px UI cell. A half-coverage threshold erased
+                 * one-pixel stems and made ordinary dialogue look broken. */
+                if (on > 0) blend(x + i, y + j, r, g, b, 255);
             }
         }
         return;
@@ -429,12 +431,22 @@ static void draw_latin(int x, int y, uint8_t ch, int size,
     uint8_t glyph[CELL];
     const uint8_t *src = font8x8[ch & 0x7F];
     for (int i = 0; i < CELL; i++) glyph[i] = src[i];
-    /* expand to HICES x HICES cell, MSB = leftmost pixel */
+    /* expand to HICES x HICES cell, matching font8x8's LSB-left layout */
     uint8_t cell[HICES*HICES];
     memset(cell, 0, sizeof cell);
+    /* Expand each 8x8 source pixel to a 2x2 block in the 16x16 intermediate,
+     * so the Latin glyphs fill the HICES cell the same way Hangul atlas data
+     * does. At 1x the 16px cell downsamples back to a true 8x8 bitmap, and
+     * larger sizes scale from full coverage instead of a sparse half-cell. */
     for (int j = 0; j < CELL; j++)
         for (int i = 0; i < CELL; i++)
-            cell[j*HICES + i] = (glyph[j] >> (CELL - 1 - i)) & 1;
+            if ((glyph[j] >> i) & 1) {
+                int cj = j * 2, ci = i * 2;
+                cell[ cj      * HICES + ci     ] = 1;
+                cell[ cj      * HICES + ci + 1 ] = 1;
+                cell[(cj + 1) * HICES + ci     ] = 1;
+                cell[(cj + 1) * HICES + ci + 1 ] = 1;
+            }
     draw_glyph_cell(x, y, cell, size, r, g, b);
 }
 

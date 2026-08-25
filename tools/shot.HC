@@ -1,13 +1,26 @@
 /* tools/shot.HC -- demo-reel runner for 퇴근 (Clock Out).
  *
  * STANDALONE program (has int main). Drives the renderer + UI compositor from
- * live engine state and emits a sequence of 320x240 PPM frames into
- * assets/shots/frame_NNN.ppm. The Makefile `gif` recipe (tools/asm_gif.py)
- * then assembles those frames into animated GIFs for the README.
+ * live engine state and emits a deterministic sequence of 320x240 PPM frames
+ * into assets/shots/frame_NNN.ppm. The Makefile `gif` recipe (tools/asm_gif.py)
+ * then assembles those frames into 10 animated GIFs plus reel.gif for the README.
  *
  * It links the full engine via the wildcard globs in the Makefile: all of the
  * core, korean, render, physics, game, narrative and content sources, plus
- * this file. */
+ * this file.
+ *
+ * Frame plan (exactly 84 frames, deterministic):
+ *   title     1..8      uia_title
+ *   explore   9..16     uia_explore (player/prompt move via t + location)
+ *   dialogue 17..24     uia_dialogue
+ *   choice   25..32     uia_choice (varies selection)
+ *   messenger 33..40    uia_messenger (varies selection)
+ *   schedule  41..48    uia_schedule (varies selection)
+ *   combat   49..60     uia_combat_focus (plays a real affordable card)
+ *   reward   61..68     uia_reward (varies selection)
+ *   boss     69..76     boss-like combat, intent/damage progression
+ *   gameover 77..84     uia_gameover
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -96,18 +109,34 @@ int main(void) {
     /* 2) UI compositor */
     uia_init();
 
-    /* make sure the output directory exists at runtime */
-    system("mkdir -p assets/shots");
+    /* NOTE: directory creation is owned by the Makefile (`shots` recipe),
+     * so no system("mkdir") call here. */
 
-    /* ---- Frames 1..6 : TITLE ---- */
-    for (int i = 0; i < 6; i++) {
+    /* ---- Frames 1..8 : TITLE ---- */
+    for (int i = 0; i < 8; i++) {
         g_combat.player.hp = 60;
         uia_title(i * 0.2);
         const char *p = emiti("title");
         uia_present(p);
     }
 
-    /* ---- Frames 7..14 : OFFICE DIALOGUE ---- */
+    /* ---- Frames 9..16 : EXPLORE ----
+     * Player/prompt movement is driven by t; we also cycle the location text
+     * so the screen varies on more than just t. */
+    {
+        const char *locs[3] = {"사무실", "회의실", "휴게실"};
+        const char *obj = "퇴근까지 남은 시간: 단축";
+        g_player.hp = 52;
+        g_player.nunchi = 7;
+        g_player.wlb = 4;
+        for (int i = 0; i < 8; i++) {
+            uia_explore(i * 0.2, locs[i % 3], obj);
+            const char *p = emiti("explore");
+            uia_present(p);
+        }
+    }
+
+    /* ---- Frames 17..24 : OFFICE DIALOGUE ---- */
     for (int i = 0; i < 8; i++) {
         rndr_init();
         uia_dialogue(i * 0.2,
@@ -117,24 +146,63 @@ int main(void) {
         uia_present(p);
     }
 
-    /* ---- Frames 15..22 : CHOICE (fabricated, mirrors late_office) ---- */
+    /* ---- Frames 25..32 : CHOICE (fabricated, mirrors late_office) ---- */
     g_pending_choice.active    = 1;
+    g_pending_choice.scene_id  = "late_office";
     g_pending_choice.n         = 3;
     g_pending_choice.opt[0].label = "사과한다";
+    g_pending_choice.opt[0].target = "apologize";
     g_pending_choice.opt[1].label = "침묵한다";
+    g_pending_choice.opt[1].target = "silence";
     g_pending_choice.opt[2].label = "분위기 파악하고 가볍게 넘긴다";
+    g_pending_choice.opt[2].target = "deflect";
     g_player.nunchi = 8;
     for (int i = 0; i < 8; i++) {
-        int idx = (i / 2) % 3;
+        int idx = (i / 2) % 3;          /* hover drifts across options */
         uia_choice(i * 0.2, "김대리", "...", &g_pending_choice, idx);
         const char *p = emiti("choice");
         uia_present(p);
     }
 
-    /* ---- Frames 23..32 : COMBAT ---- */
+    /* ---- Frames 33..40 : MESSENGER ----
+     * Seed an inbox, then vary the selected message. */
+    {
+        uint32_t m0 = msg_deliver(2,  "팀장: 새벽까지 회의 있음. 좀 와라.");
+        uint32_t m1 = msg_deliver(3,  "동료: 커피 사올게. 혹시 마감 도와줄까?");
+        uint32_t m2 = msg_deliver(4,  "본사: 이번 분기 실적 보고서 제출 바람.");
+        uint32_t m3 = msg_deliver(5,  "알림: 오늘 초과근무 3시간 돌파.");
+        (void)m0; (void)m1; (void)m2; (void)m3;
+        int n = msg_count() > 0 ? msg_count() : 4;
+        for (int i = 0; i < 8; i++) {
+            int sel = i % n;
+            uia_messenger(i * 0.2, sel);
+            const char *p = emiti("messenger");
+            uia_present(p);
+        }
+    }
+
+    /* ---- Frames 41..48 : SCHEDULE ----
+     * Queue a few scene events, then vary the selected entry. */
+    {
+        GameTime base = {2026, 8, 25, 1, 540};   /* 09:00 */
+        sched_queue(time_add_min(base,   0), "standup",    0);
+        sched_queue(time_add_min(base, 120), "lunch",      0);
+        sched_queue(time_add_min(base, 240), "meeting",    0);
+        sched_queue(time_add_min(base, 360), "clock_out",  0);
+        int n = sched_count() > 0 ? sched_count() : 4;
+        for (int i = 0; i < 8; i++) {
+            int sel = i % n;
+            uia_schedule(i * 0.2, sel);
+            const char *p = emiti("schedule");
+            uia_present(p);
+        }
+    }
+
+    /* ---- Frames 49..60 : COMBAT (focused) ----
+     * Real hand, a real affordable card played once to show damage. */
     combat_start(100);
     {
-        int set[] = {1, 10, 12, 15, 9, 6, 2, 17, 19, 20};
+        int set[] = {10, 12, 1, 4, 9};   /* 세그폴트(2), 월요일(1), 의자(1), 눈치(0), 커피(0) */
         int n = (int)(sizeof set / sizeof set[0]);
         if (n > MAX_HAND) n = MAX_HAND;
         g_combat.player.hp        = 60;
@@ -143,24 +211,61 @@ int main(void) {
         for (int k = 0; k < n; k++) g_combat.hand[k] = (uint32_t)set[k];
         g_combat.hand_n = n;
     }
-    for (int i = 0; i < 10; i++) {
-        uia_combat(i * 0.2);
+    for (int i = 0; i < 12; i++) {
+        int sel = i % g_combat.hand_n;        /* focus drifts across the hand */
+        /* play the first affordable card once, mid-sequence, then flush events
+         * so the HP bar reflects a real gameplay state change. */
+        if (i == 5) {
+            CardDef *c = card_by_id(g_combat.hand[0]);
+            if (c && g_combat.player.energy >= c->cost) {
+                combat_player_play(0, g_combat.enemy.id);
+                ev_process_phase();
+            }
+        }
+        uia_combat_focus(i * 0.2, sel);
         const char *p = emiti("combat");
         uia_present(p);
     }
 
-    /* ---- Frames 33..36 : BOSS ---- */
-    for (int i = 0; i < 4; i++) {
-        uia_scene_boss(i * 0.2);
-        uia_dialogue(i * 0.2,
-                     "주인",
-                     "이번 분기 실적, 다 네 탓이다.");
+    /* ---- Frames 61..68 : REWARD (card pick) ---- */
+    {
+        uint32_t card_ids[3] = {10, 15, 20};   /* 세그폴트, 백업, 긴급 배포 */
+        for (int i = 0; i < 8; i++) {
+            int sel = i % 3;
+            uia_reward(i * 0.2, card_ids, sel);
+            const char *p = emiti("reward");
+            uia_present(p);
+        }
+    }
+
+    /* ---- Frames 69..76 : BOSS (boss-like combat, intent/damage progression) ---- */
+    combat_start(100);
+    {
+        int set[] = {10, 12, 20, 9, 4};
+        int n = (int)(sizeof set / sizeof set[0]);
+        if (n > MAX_HAND) n = MAX_HAND;
+        g_combat.player.hp        = 60;
+        g_combat.player.maxhp     = 60;
+        g_combat.player.energy    = 3;
+        g_combat.player.maxenergy = 3;
+        g_combat.enemy.maxhp      = 120;     /* boss has more HP */
+        g_combat.enemy.hp         = 120;
+        for (int k = 0; k < n; k++) g_combat.hand[k] = (uint32_t)set[k];
+        g_combat.hand_n = n;
+    }
+    for (int i = 0; i < 8; i++) {
+        /* damage progression: enemy HP drops each frame toward defeat */
+        int hp = 120 - i * 13;
+        if (hp < 1) hp = 1;
+        g_combat.enemy.hp = hp;
+        int sel = i % g_combat.hand_n;
+        uia_combat_focus(i * 0.2, sel);
         const char *p = emiti("boss");
         uia_present(p);
     }
 
-    /* ---- Frames 37..40 : GAMEOVER ---- */
-    for (int i = 0; i < 4; i++) {
+    /* ---- Frames 77..84 : GAMEOVER ---- */
+    for (int i = 0; i < 8; i++) {
         uia_gameover(i * 0.2);
         const char *p = emiti("gameover");
         uia_present(p);
