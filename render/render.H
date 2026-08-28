@@ -1,13 +1,13 @@
 /* render/render.h -- tiny software 3D renderer for 성광정보기술.
- * Portable C99. Framebuffer 320x240, palette-indexed.
+ * Portable C99. Framebuffer 640x360, palette-indexed.
  * Includes ../../include/contracts.h for Vec3/Mat4 math. */
 #ifndef RENDER_H
 #define RENDER_H
 
 #include "../include/contracts.HC"
 
-#define RW 320            /* framebuffer width  */
-#define RH 240            /* framebuffer height */
+#define RW 640            /* framebuffer width  */
+#define RH 360            /* framebuffer height */
 #define RNDR_NPAL 256     /* palette size       */
 
 /* Palette layout: 16 오방색 (obangsaek) hue columns x 16 luminance steps.

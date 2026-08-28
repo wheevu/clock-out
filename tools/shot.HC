@@ -1,7 +1,7 @@
 /* tools/shot.HC -- demo-reel runner for 퇴근 (Clock Out).
  *
  * STANDALONE program (has int main). Drives the renderer + UI compositor from
- * live engine state and emits a deterministic sequence of 320x240 PPM frames
+ * live engine state and emits a deterministic sequence of 640x360 PPM frames
  * into assets/shots/frame_NNN.ppm. The Makefile `gif` recipe (tools/asm_gif.py)
  * then assembles those frames into 10 animated GIFs plus reel.gif for the README.
  *

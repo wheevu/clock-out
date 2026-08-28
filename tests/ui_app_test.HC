@@ -65,6 +65,19 @@ static int ppm_stats(const char *path, long *size, int *lit) {
     return 0;
 }
 
+static int ppm_dimensions(const char *path, int *w, int *h) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+    char line[64];
+    if (!fgets(line, sizeof line, f) || line[0] != 'P' || line[1] != '6' ||
+        !fgets(line, sizeof line, f) || sscanf(line, "%d %d", w, h) != 2) {
+        fclose(f);
+        return -1;
+    }
+    fclose(f);
+    return 0;
+}
+
 /* Read one pixel (r,g,b) from a P6 PPM. Returns 0 on success. */
 static int ppm_pixel(const char *path, int x, int y,
                      int *r, int *g, int *b) {
@@ -117,6 +130,9 @@ int main(void) {
 
     /* 1. title */
     { uia_title(0.3); uia_present("/tmp/ui_title.ppm");
+      int w = 0, h = 0;
+      CHECK(ppm_dimensions("/tmp/ui_title.ppm", &w, &h) == 0 && w == 640 && h == 360,
+            "UI frame is native 640x360");
       CHECK(ppm_stats("/tmp/ui_title.ppm", &sz, &lit) == 0 && sz > 1000 && lit > 200,
             "title frame non-trivial"); }
 
@@ -136,6 +152,15 @@ int main(void) {
       uia_present("/tmp/ui_choice.ppm");
       CHECK(ppm_stats("/tmp/ui_choice.ppm", &sz, &lit) == 0 && lit > 200,
             "choice frame non-trivial"); }
+
+    /* Authored data should never index past the fixed choice buffer, even if
+     * a corrupt scene reports a larger count or selection. */
+    { PendingChoice oversized; memset(&oversized, 0, sizeof oversized);
+      oversized.active = 1; oversized.n = CHOICE_CAP + 9;
+      uia_choice(0.2, "주인", "선택지가 너무 많다.", &oversized, CHOICE_CAP + 4);
+      uia_present("/tmp/ui_choice_oversized.ppm");
+      CHECK(ppm_stats("/tmp/ui_choice_oversized.ppm", &sz, &lit) == 0 && lit > 200,
+            "oversized choice count clamps to the fixed buffer"); }
 
     /* 4. explore */
     { uia_explore(0.4, "사무실 복도", "비상구를 찾아라");

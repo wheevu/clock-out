@@ -4,8 +4,8 @@
  * deterministic palette framebuffer produced by render/render.HC. The 3D scene
  * stays palette-indexed and unchanged; the UI layer is full-color on top.
  *
- * Surface layout (must match render.H): RW=320, RH=240.
- * All coordinates are in this 320x240 space.
+ * Surface layout (must match render.H): RW=640, RH=360.
+ * All coordinates are in this 640x360 space.
  *
  * Compositor model per frame:
  *   1) renderer draws the 3D scene into the palette buffer (rndr_*),

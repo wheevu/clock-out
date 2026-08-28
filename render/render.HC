@@ -1,5 +1,5 @@
 /* render/render.HC -- software 3D renderer implementation for 성광정보기술.
- * Portable C99. Framebuffer 320x240, palette-indexed.
+ * Portable C99. Framebuffer 640x360, palette-indexed.
  * Include guard lives in render.H; this file is the implementation only.
  * Includes contracts.HC for Vec3/Mat4 math (mat_lookat/mat_perspective/mat_transform). */
 #include "render.H"

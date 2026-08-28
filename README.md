@@ -5,7 +5,7 @@ You are a junior engineer at 성광정보기술 who wakes at 3:17 AM to a buildi
 
 The commute is a dungeon, your manager is a boss fight (like in IRL), and the only exits are a letter of resignation or a coup that puts you in charge.
 
-The project runs on a hand-written 320x240 software renderer and a deterministic combat engine. This README shows a scripted vertical slice while the playable loop is still being built.
+The project runs on a hand-written 640x360 software renderer and a deterministic combat engine. This README shows a scripted vertical slice while the playable loop is still being built.
 
 <p align="center"> <img src="assets/shots/reel.gif" width=85%> </p>
 
@@ -26,7 +26,7 @@ The reward screen presents your planned post-combat deck choice, because even su
 The boss is the manager, and beating them is the whole point of the slice.
 
 The ten clips are scripted captures of each screen. They present the loop screen by screen while the application main loop and input handler remain in development. Think of it as a polished elevator pitch, with your manager waiting between floors.
-Each screen draws real engine state onto the 320x240 renderer.
+Each screen draws real engine state onto the 640x360 renderer.
 
 ## Visuals
 
@@ -57,7 +57,7 @@ Ten scripted captures, one per screen, from the title screen to defeat.
 
 ## Renderer style (단청 night)
 
-The whole frame is drawn by a 320x240 software rasterizer.
+The whole frame is drawn by a native 640x360 software rasterizer.
 Colors come from a dancheong-night palette built as hue times step. Every face uses a color at a luminance level, so shading and fog move it brighter or darker within the same hue.
 Faces catch moonlight through Lambert shading, and view-depth fog pulls the far office into 3:17 AM dark.
 A true-color RGBA overlay carries the Hangul and Latin UI, panels, bars, and baked sprites on top of the palette scene.
@@ -81,7 +81,7 @@ The current code has two clear parts: implemented engine behavior and presentati
 ### Presentation-only screens
 
 The title, exploration, dialogue, choice, messenger, schedule, combat, reward, boss, and game-over screens live in `render/ui_app.H`.
-They draw real card and combat state plus authored presentation data onto the 320x240 renderer.
+They draw real card and combat state plus authored presentation data onto the 640x360 renderer.
 An input loop and application run loop do not drive them yet, so the screens do not advance in response to player input.
 The explore, messenger, schedule, and reward screens sit on top of the implemented subsystems but are not wired to live game flow.
 
@@ -91,7 +91,7 @@ The explore, messenger, schedule, and reward screens sit on top of the implement
 |-----------|--------|--------|
 | Math / RNG / events / strings | `core/` | done (seeded xorshift, event queue, UTF-8 to jamo tokenizer) |
 | Hangul compose + font + two-beol IME | `korean/` | done (jamo bitmaps, syllable composition, deliberate corruption flaw) |
-| Software 3D renderer | `render/` | done (320x240, z-buffer, Lambert shading, depth fog, dancheong palette, PPM output, wireframe) |
+| Software 3D renderer | `render/` | done (640x360, z-buffer, Lambert shading, depth fog, dancheong palette, PPM output, wireframe) |
 | True-color UI compositor | `render/ui.H` | done (RGBA overlay over the palette scene, Hangul/Latin text, panels, bars, cards, baked sprites) |
 | Game-flow compositor / screens | `render/ui_app.H` | done (title, exploration, dialogue, choice, messenger, schedule, combat, reward, boss, game-over screens; compositor demos over engine state, no input loop yet) |
 | Rigid-body physics | `physics/` | done (pool of 64, sphere/AABB/plane, sequential impulses, sleeping) |

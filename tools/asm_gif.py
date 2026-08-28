@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # tools/asm_gif.py -- assemble the demo-reel PPM frames into animated GIFs.
 #
-# Reads assets/shots/frame_NNN.ppm (P6, 320x240) in numeric order, upscales
-# each x2 (640x480) with nearest-neighbor, and writes:
+# Reads assets/shots/frame_NNN.ppm (P6, 640x360) in numeric order and writes:
 #   - one looping GIF per screen group (title, explore, dialogue, choice,
 #     messenger, schedule, combat, reward, boss, gameover) into
 #     assets/shots/<group>.gif
@@ -20,7 +19,7 @@ from pathlib import Path
 import subprocess
 
 SHOTDIR = Path("assets/shots")
-OUT_W, OUT_H = 640, 480      # 320x240 upscaled x2
+OUT_W, OUT_H = 640, 360
 DURATION = 180               # ms per frame
 
 # (group name, first frame, last frame) inclusive, 1-based
@@ -56,6 +55,21 @@ def list_frames():
     return out
 
 
+def ppm_size(path):
+    """Read P6 dimensions without requiring Pillow."""
+    with path.open("rb") as f:
+        if f.readline().strip() != b"P6":
+            raise GifError("not a P6 PPM: %s" % path)
+        line = f.readline()
+        while line.startswith(b"#"):
+            line = f.readline()
+        try:
+            w, h = (int(value) for value in line.split())
+        except (TypeError, ValueError):
+            raise GifError("invalid PPM dimensions: %s" % path)
+        return w, h
+
+
 def have_pil():
     try:
         import PIL  # noqa
@@ -65,14 +79,15 @@ def have_pil():
 
 
 def load_pil(paths):
-    """Load PPMs as scaled PIL RGB images (nearest-neighbor x2)."""
+    """Load PPMs as native-resolution PIL RGB images."""
     from PIL import Image
     imgs = []
     for p in paths:
         im = Image.open(p)
         if im.mode != "RGB":
             im = im.convert("RGB")
-        im = im.resize((OUT_W, OUT_H), Image.NEAREST)
+        if im.size != (OUT_W, OUT_H):
+            raise GifError("unexpected frame size %s for %s" % (im.size, p))
         imgs.append(im)
     return imgs
 
@@ -178,6 +193,17 @@ def main():
         print("error: %d expected frame(s) missing: %s"
               % (len(missing), ", ".join("%d" % m for m in missing)),
               file=sys.stderr)
+        return 1
+
+    try:
+        for _n, frame in frames:
+            size = ppm_size(frame)
+            if size != (OUT_W, OUT_H):
+                print("error: unexpected frame size %s for %s; expected %dx%d"
+                      % (size, frame, OUT_W, OUT_H), file=sys.stderr)
+                return 1
+    except (GifError, OSError) as e:
+        print("error: %s" % e, file=sys.stderr)
         return 1
 
     # delete every GIF in the shot dir so that, after assembly, the only
