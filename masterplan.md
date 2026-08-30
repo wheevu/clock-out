@@ -6,7 +6,7 @@
 > Audience: one experienced systems programmer who will build this incrementally.
 > Goal: a coherent, debuggable, finishable game, not a pile of engine experiments.
 > Status: historical pre-implementation design record.
-> For current behavior and resolution, use `README.md` and the source.
+> For current behavior and resolution, use `GUIDE.md` and the source.
 > The 320×240 targets below describe the original plan.
 
 ---

@@ -7,8 +7,8 @@ Instead we rasterize each syllable the game actually uses with the system
 Korean font into a 16x16 bitmap and hand the renderer an atlas to blit
 directly. Unknown syllables fall back to hangul_compose.
 
-Scans content/, game/, narrative/, render/, tools/, include/, core/ and the
-README for every distinct Hangul syllable, renders each with AppleGothic at
+Scans content/, game/, narrative/, render/, tools/, include/, core/, README,
+and GUIDE for every distinct Hangul syllable, renders each with AppleGothic at
 high res, thresholds to 16x16, and emits korean/syllable_data.h as two
 parallel arrays keyed by syllable codepoint (sorted ascending for bsearch).
 
@@ -25,7 +25,7 @@ CELL = 16
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 SCAN_DIRS = ["content", "game", "narrative", "render", "tools", "include", "core", "korean"]
-SCAN_FILES = ["README.md"]
+SCAN_FILES = ["README.md", "GUIDE.md"]
 EXT = (".HC", ".h", ".ssc", ".md")
 
 
