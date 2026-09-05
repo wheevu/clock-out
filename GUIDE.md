@@ -72,24 +72,24 @@ Ten scripted captures, one per screen, from the title screen to defeat.
 
 <table>
 <tr>
-<td align="center" width="50%"><img src="assets/shots/title.gif" width=90%><br><sub>Title screen over a still night-office diorama.</sub></td>
-<td align="center" width="50%"><img src="assets/shots/explore.gif" width=90%><br><sub>Exploration screen over the shifting after-hours office.</sub></td>
+<td align="center" width="50%"><img src="assets/shots/title.gif" width=90%></td>
+<td align="center" width="50%"><img src="assets/shots/explore.gif" width=90%></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/shots/dialogue.gif" width=90%><br><sub>A scene with the nameplate and an advance prompt.</sub></td>
-<td align="center"><img src="assets/shots/choice.gif" width=90%><br><sub>A 눈치-gated choice list where some options stay locked.</sub></td>
+<td align="center"><img src="assets/shots/dialogue.gif" width=90%></td>
+<td align="center"><img src="assets/shots/choice.gif" width=90%></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/shots/messenger.gif" width=90%><br><sub>Inbox messages arriving from coworkers and the boss.</sub></td>
-<td align="center"><img src="assets/shots/schedule.gif" width=90%><br><sub>The day planner trading rest against deadlines.</sub></td>
+<td align="center"><img src="assets/shots/messenger.gif" width=90%></td>
+<td align="center"><img src="assets/shots/schedule.gif" width=90%></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/shots/combat.gif" width=90%><br><sub>Card hand, energy strip, and a physics weapon in flight.</sub></td>
-<td align="center"><img src="assets/shots/reward.gif" width=90%><br><sub>The reward screen offering a new card.</sub></td>
+<td align="center"><img src="assets/shots/combat.gif" width=90%></td>
+<td align="center"><img src="assets/shots/reward.gif" width=90%></td>
 </tr>
 <tr>
-<td align="center"><img src="assets/shots/boss.gif" width=90%><br><sub>The manager encounter with telegraphed intent.</sub></td>
-<td align="center"><img src="assets/shots/gameover.gif" width=90%><br><sub>Defeat, or the stiff 사직 ending.</sub></td>
+<td align="center"><img src="assets/shots/boss.gif" width=90%></td>
+<td align="center"><img src="assets/shots/gameover.gif" width=90%></td>
 </tr>
 </table>
 
@@ -99,7 +99,7 @@ The whole frame is drawn by a native 640x360 software rasterizer.
 Colors come from a dancheong-night palette built as hue times step. Every face uses a color at a luminance level, so shading and fog move it brighter or darker within the same hue.
 Faces catch moonlight through Lambert shading, and view-depth fog pulls the far office into 3:17 AM dark.
 A true-color RGBA overlay carries the Hangul and Latin UI, panels, bars, and baked sprites on top of the palette scene.
-Korean text is composed live from jamo bitmaps into syllables, and character art is baked from third-party pixel packs into engine sprites.
+Korean text is composed live from jamo bitmaps into syllables, and original Clock Out character art is baked into engine sprites.
 
 ## Mechanics
 
@@ -204,24 +204,25 @@ This slice leaves the following work for later:
 - Networking, convex-hull physics, full Unicode, skeletal animation, PBR, multithreading, and an ECS.
 - The full campaign, Acts II through IV, every NPC, and multiple endings still need to be authored as DSL data. The engine supports them.
 - Free walking, live messenger and schedule integration, save/load for the playable slice, and TempleOS hosting remain unimplemented.
-- The third-party character and interior art comes from the credits below. It ships for local development and README preview only.
+- The bundled office, UI, and effect assets come from the credits below. Character art is original to Clock Out.
 
 ## Credits
 
 `tools/asset_bake.py` reads `~/Creative/GameDev` by default, or the folder named by `CLOCKOUT_SRC`.
 Run it with Python and Pillow only when rebuilding sprites.
 It now includes four idle frames for each existing character, with stable feet anchors in the playable compositor.
-Office furniture is simple 3D geometry; the LimeZu office packs informed its proportions and details rather than being pasted as top-down sprites into a perspective camera.
+Office furniture is simple 3D geometry; LimeZu office assets informed its proportions and details rather than being pasted as top-down sprites into a perspective camera.
 `python3 tools/gen_glyphs.py` regenerates the bundled 16px Korean glyph atlas when copy changes.
 Original source packs stay outside this repository.
-The local Modern Interiors license requires LimeZu credit and prohibits redistribution of the asset pack; verify distribution terms before publishing derived asset bundles.
+The local LimeZu license requires credit and prohibits redistribution of the raw asset pack; verify distribution terms before publishing derived asset bundles.
 
-The character and interior art bundled with this repo comes from the credits below. It is included for local development and README preview only.
+The bundled third-party assets are included for local development and README preview only.
 
-- **LimeZu** - Modern Office and Modern Interiors (characters), at
+- **LimeZu** - Modern Office and Modern Interiors (office and interior assets), at
   [limezu.itch.io](https://limezu.itch.io).
   Commercial use is allowed, reselling the raw assets is not, and credit is
   appreciated (required on some packs).
+- **Josh** - original Clock Out character designs.
 - **Kenney** - UI, icons, playing cards, particle pack, and fonts, at
   [kenney.nl](https://kenney.nl).
   Released under CC0 (public domain, no attribution required).

@@ -3,25 +3,26 @@ CREDITS — baked sprite sources (퇴근 / clock-out, local dev only)
 These assets are bundled only for local development and README use.
 They remain the property of their respective authors under the listed packs.
 
-LimeZu credit: https://limezu.itch.io (Modern Interiors)
+Character designs: Josh.
+LimeZu office/interior assets: https://limezu.itch.io
 Source pack licenses remain in Creative/GameDev/archive/.
 
-- char_player: characters/minji.png  [LimeZu Modern Interiors — characters]  (friendly office worker (standing front-facing frame))
-- char_boss: characters/yunjin.png  [LimeZu Modern Interiors — characters]  (the boss '주인' (distinct character))
-- char_kim: characters/kazuha.png  [LimeZu Modern Interiors — characters]  (senior colleague '김대리')
+- char_player: characters/minji.png  [Original Clock Out character art]  (Josh design; friendly office worker (standing front-facing frame))
+- char_boss: characters/yunjin.png  [Original Clock Out character art]  (Josh design; the boss '주인' (distinct character))
+- char_kim: characters/kazuha.png  [Original Clock Out character art]  (Josh design; senior colleague '김대리')
 - icon_star: ui/kenney_game-icons/PNG/White/1x/star.png  [Kenney CC0 — game-icons]  (small star icon)
 - fx_spark: vfx/kenney_particle-pack/PNG (Transparent)/spark_01.png  [Kenney CC0 — particle-pack]  (small spark particle (transparent variant))
 - card_frame: ui/kenney_playing-cards-pack/PNG/Cards (medium)/card_back.png  [Kenney CC0 — playing-cards-pack]  (card back used as a frame placeholder)
-- idle_player_0: characters/minji.png  [LimeZu Modern Interiors - characters]  (front idle frame 0; credit LimeZu)
-- idle_player_1: characters/minji.png  [LimeZu Modern Interiors - characters]  (front idle frame 1; credit LimeZu)
-- idle_player_2: characters/minji.png  [LimeZu Modern Interiors - characters]  (front idle frame 2; credit LimeZu)
-- idle_player_3: characters/minji.png  [LimeZu Modern Interiors - characters]  (front idle frame 3; credit LimeZu)
-- idle_kim_0: characters/kazuha.png  [LimeZu Modern Interiors - characters]  (front idle frame 0; credit LimeZu)
-- idle_kim_1: characters/kazuha.png  [LimeZu Modern Interiors - characters]  (front idle frame 1; credit LimeZu)
-- idle_kim_2: characters/kazuha.png  [LimeZu Modern Interiors - characters]  (front idle frame 2; credit LimeZu)
-- idle_kim_3: characters/kazuha.png  [LimeZu Modern Interiors - characters]  (front idle frame 3; credit LimeZu)
-- idle_boss_0: characters/yunjin.png  [LimeZu Modern Interiors - characters]  (front idle frame 0; credit LimeZu)
-- idle_boss_1: characters/yunjin.png  [LimeZu Modern Interiors - characters]  (front idle frame 1; credit LimeZu)
-- idle_boss_2: characters/yunjin.png  [LimeZu Modern Interiors - characters]  (front idle frame 2; credit LimeZu)
-- idle_boss_3: characters/yunjin.png  [LimeZu Modern Interiors - characters]  (front idle frame 3; credit LimeZu)
+- idle_player_0: characters/minji.png  [Original Clock Out character art]  (Josh design; front idle frame 0)
+- idle_player_1: characters/minji.png  [Original Clock Out character art]  (Josh design; front idle frame 1)
+- idle_player_2: characters/minji.png  [Original Clock Out character art]  (Josh design; front idle frame 2)
+- idle_player_3: characters/minji.png  [Original Clock Out character art]  (Josh design; front idle frame 3)
+- idle_kim_0: characters/kazuha.png  [Original Clock Out character art]  (Josh design; front idle frame 0)
+- idle_kim_1: characters/kazuha.png  [Original Clock Out character art]  (Josh design; front idle frame 1)
+- idle_kim_2: characters/kazuha.png  [Original Clock Out character art]  (Josh design; front idle frame 2)
+- idle_kim_3: characters/kazuha.png  [Original Clock Out character art]  (Josh design; front idle frame 3)
+- idle_boss_0: characters/yunjin.png  [Original Clock Out character art]  (Josh design; front idle frame 0)
+- idle_boss_1: characters/yunjin.png  [Original Clock Out character art]  (Josh design; front idle frame 1)
+- idle_boss_2: characters/yunjin.png  [Original Clock Out character art]  (Josh design; front idle frame 2)
+- idle_boss_3: characters/yunjin.png  [Original Clock Out character art]  (Josh design; front idle frame 3)
 

@@ -35,7 +35,7 @@ SRC_ROOT = os.environ.get(
 # --- bake plan ---------------------------------------------------------------
 # Each entry describes one manifest key and how to derive its blob.
 # kind:
-#   char  -> crop a single 48x48 frame from a LimeZu 8x20 sheet (row 0, col)
+#   char  -> crop a single 48x48 frame from a Clock Out character sheet (row 0, col)
 #   icon  -> load + convert to RGBA, NEAREST-downscale so max axis <= size
 #   spark -> load + convert to RGBA, crop content bbox, fit within size (NEAREST)
 #   card  -> load + convert to RGBA (already small; downscale if needed)
@@ -45,24 +45,24 @@ PLAN = [
         "src": "characters/minji.png",
         "kind": "char",
         "col": 1,
-        "pack": "LimeZu Modern Interiors — characters",
-        "note": "friendly office worker (standing front-facing frame)",
+        "pack": "Original Clock Out character art",
+        "note": "Josh design; friendly office worker (standing front-facing frame)",
     },
     {
         "key": "char_boss",
         "src": "characters/yunjin.png",
         "kind": "char",
         "col": 1,
-        "pack": "LimeZu Modern Interiors — characters",
-        "note": "the boss '주인' (distinct character)",
+        "pack": "Original Clock Out character art",
+        "note": "Josh design; the boss '주인' (distinct character)",
     },
     {
         "key": "char_kim",
         "src": "characters/kazuha.png",
         "kind": "char",
         "col": 1,
-        "pack": "LimeZu Modern Interiors — characters",
-        "note": "senior colleague '김대리'",
+        "pack": "Original Clock Out character art",
+        "note": "Josh design; senior colleague '김대리'",
     },
     {
         "key": "icon_star",
@@ -98,8 +98,8 @@ for role, source in (("player", "minji"), ("kim", "kazuha"), ("boss", "yunjin"))
             "src": f"characters/{source}.png",
             "kind": "char",
             "col": frame,
-            "pack": "LimeZu Modern Interiors - characters",
-            "note": f"front idle frame {frame}; credit LimeZu",
+            "pack": "Original Clock Out character art",
+            "note": f"Josh design; front idle frame {frame}",
         })
 
 
@@ -111,7 +111,7 @@ def load_rgba(rel_path):
 
 
 def bake_char(im, col):
-    # LimeZu Modern Interiors sheets are 384x960 = 8 cols x 20 rows of 48x48.
+    # Clock Out character sheets are 384x960 = 8 cols x 20 rows of 48x48.
     fw, fh = 48, 48
     x0, y0 = col * fw, 0
     crop = im.crop((x0, y0, x0 + fw, y0 + fh))
@@ -186,7 +186,8 @@ def write_credits(plan):
         "They remain the property of their respective authors under the listed packs."
     )
     lines.append("")
-    lines.append("LimeZu credit: https://limezu.itch.io (Modern Interiors)")
+    lines.append("Character designs: Josh.")
+    lines.append("LimeZu office/interior assets: https://limezu.itch.io")
     lines.append("Source pack licenses remain in Creative/GameDev/archive/.")
     lines.append("")
     for spec in plan:
