@@ -131,14 +131,18 @@ static void uia_card_body(int x, int y, int w, int h, const char *s,
 /* Darken the near floor without flattening the palette-rendered room.
  * Sprites and interface elements are drawn after this pass, so they stay crisp. */
 static void uia_world_grade(void) {
-    uint8_t r, g, b, tr, tg, tb;
-    hcol(HUE_CHARCOAL, 2, &r, &g, &b);
-    hcol(HUE_TEAL, RNDR_STEP_DARK, &tr, &tg, &tb);
-    const int horizon = 162;
-    ui_fill_rect(0, horizon, RW, RH - horizon, r, g, b, 170);
-    ui_fill_rect(0, horizon, RW, 1, tr, tg, tb, 100);
-    for (int y = horizon + 18; y < RH; y += 18)
-        ui_fill_rect(0, y, RW, 1, r, g, b, 45);
+    /* Edge falloff, not a painted horizon covering half the room. */
+    for (int i = 0; i < 32; i++) {
+        uint8_t a = (uint8_t)((32-i)/2);
+        ui_draw_rect(i, i/2, RW-2*i, RH-i, 5, 10, 14, a);
+    }
+}
+
+static void office_box(double x, double y, double z, double w, double h,
+                       double d, int hue, int step) {
+    Mesh m = mesh_box((Vec3){x,y,z}, (Vec3){w,h,d}, RNDR_COL(hue,step));
+    rndr_draw(m);
+    mesh_free(&m);
 }
 
 /* =====================================================================
@@ -154,10 +158,10 @@ void uia_init(void) {
  * ===================================================================== */
 void uia_scene_office(double t) {
     rndr_begin();
-    rndr_set_camera((Vec3){0, 1.6, 5.0}, (Vec3){0, 0.7, -0.5});
+    rndr_set_camera((Vec3){0, 2.5, 6.8}, (Vec3){0, 1.0, -1.8});
 
     /* room shell: floor, ceiling, side walls, back wall (near-black indigo) */
-    Mesh floor = mesh_plane((Vec3){0, 0, 0}, (Vec3){0, 1, 0}, 20, RNDR_COL(HUE_BROWN, RNDR_STEP_DARK));
+    Mesh floor = mesh_plane((Vec3){0, -.07, 0}, (Vec3){0, 1, 0}, 20, RNDR_COL(HUE_SLATE, 2));
     rndr_draw(floor); mesh_free(&floor);
     Mesh ceil = mesh_plane((Vec3){0, 3.4, 0}, (Vec3){0, -1, 0}, 20, RNDR_COL(HUE_INDIGO, RNDR_STEP_DARK));
     rndr_draw(ceil); mesh_free(&ceil);
@@ -168,47 +172,70 @@ void uia_scene_office(double t) {
     Mesh bw = mesh_plane((Vec3){0, 1.7, -3.3}, (Vec3){0, 0, 1}, 16, RNDR_COL(HUE_INDIGO, RNDR_STEP_DARK));
     rndr_draw(bw); mesh_free(&bw);
 
-    /* rear city windows: grid of small emissive panes, some flicker out */
+    /* Carpet seams and suspended ceiling establish the room's depth. */
+    for (int z = -3; z <= 5; z++) {
+        for (int x = -4; x <= 4; x++)
+            office_box(x, -0.02, z, .98, .035, .98, HUE_SLATE, 2+((x+z+12)%2));
+        office_box(0, 3.37, z, 8.7, .02, .018, HUE_SLATE, 5);
+    }
+    for (int x = -4; x <= 4; x++)
+        office_box(x, 3.37, 0, .018, .02, 12, HUE_SLATE, 5);
+    /* Rear windows: dark glass, a few distant lights, solid mullions. */
     for (int j = 0; j < 3; j++) {
         for (int i = 0; i < 7; i++) {
             double wx = -3.0 + i * 1.0;
             double wy = 0.6 + j * 0.8;
             int seed = i * 7 + j;
-            int on = uia_flick(t * 0.7, seed);
-            int hue = (seed % 5 == 0) ? HUE_VERMILION : (seed % 3 == 0 ? HUE_GOLD : HUE_TEAL);
+            int on = seed % 4 == 0;
+            int hue = seed % 3 == 0 ? HUE_GOLD : HUE_TEAL;
             if (!on) hue = HUE_INDIGO;
-            int step = on ? RNDR_STEP_LIT : RNDR_STEP_DARK;
-            Mesh w = mesh_plane((Vec3){wx, wy, -3.25}, (Vec3){0, 0, 1}, 0.7, RNDR_COL(hue, step));
+            int step = on ? 7 : 1;
+            Mesh w = mesh_plane((Vec3){wx, wy, -3.25}, (Vec3){0, 0, 1}, 0.65, RNDR_COL(hue, step));
             rndr_draw(w); mesh_free(&w);
         }
     }
 
     /* cubicle banks: two sides, three rows deep, central aisle */
     for (int row = 0; row < 3; row++) {
-        double z = -0.3 - row * 1.0;
+            double z = 2.2 - row * 1.7;
         for (int side = -1; side <= 1; side += 2) {
             double cx = side * 1.7;
-            Mesh desk = mesh_box((Vec3){cx, 0.42, z}, (Vec3){1.5, 0.1, 0.7}, RNDR_COL(HUE_BROWN, RNDR_STEP_MID));
+            Mesh desk = mesh_box((Vec3){cx, 0.76, z}, (Vec3){1.5, 0.08, 0.85}, RNDR_COL(HUE_TAN, 8));
             rndr_draw(desk); mesh_free(&desk);
             /* monitor face scans (brightness pulses with time) */
             int mseed = row * 2 + (side > 0 ? 1 : 0);
-            int mstep = RNDR_STEP_MID + (int)(sin(t * 5.0 + mseed * 1.3) * 2.0);
-            if (mstep < 6) mstep = 6; if (mstep > 14) mstep = 14;
-            Mesh mon = mesh_box((Vec3){cx, 0.8, z - 0.15}, (Vec3){0.85, 0.5, 0.06}, RNDR_COL(HUE_TEAL, mstep));
+            int mstep = mseed == 1 ? 9 : 2;
+            office_box(cx, 1.08, z-.20, .62, .43, .10, HUE_CHARCOAL, 2);
+            Mesh mon = mesh_box((Vec3){cx, 1.08, z - 0.14}, (Vec3){0.54, 0.34, 0.015}, RNDR_COL(HUE_TEAL, mstep));
             rndr_draw(mon); mesh_free(&mon);
-            Mesh par = mesh_box((Vec3){cx, 1.1, z - 0.45}, (Vec3){0.08, 1.7, 0.75}, RNDR_COL(HUE_SLATE, RNDR_STEP_MID));
+            office_box(cx, .85, z-.20, .08, .15, .08, HUE_CHARCOAL, 3);
+            office_box(cx, .815, z+.19, .48, .025, .18, HUE_CHARCOAL, 5);
+            office_box(cx+.53, .9, z+.18, .12, .20, .12, HUE_WHITE, 9);
+            office_box(cx-.48, .81, z+.15, .25, .015, .32, HUE_WHITE, 10);
+            office_box(cx-.62, .38, z, .08, .76, .65, HUE_SLATE, 4);
+            office_box(cx+.62, .38, z, .08, .76, .65, HUE_SLATE, 4);
+            office_box(cx, .47, z+.65, .44, .09, .42, HUE_CHARCOAL, 3);
+            office_box(cx, .77, z+.84, .44, .52, .06, HUE_CHARCOAL, 3);
+            office_box(cx, .24, z+.65, .07, .45, .07, HUE_SLATE, 5);
+            Mesh par = mesh_box((Vec3){cx, .72, z - .52}, (Vec3){1.56, 1.44, .07}, RNDR_COL(HUE_SLATE, 5));
             rndr_draw(par); mesh_free(&par);
         }
     }
 
+    /* Exit alcove: the one warm landmark beyond the abandoned desks. */
+    office_box(0, 1.08, -3.12, 1.1, 2.16, .12, HUE_CHARCOAL, 2);
+    office_box(0, 2.28, -3.02, .76, .19, .05, HUE_JADE, 12);
+    office_box(.34, 1.0, -2.99, .06, .12, .06, HUE_GOLD, 12);
+
     /* fluorescent fixtures along ceiling; the middle one flickers (warning) */
     for (int f = 0; f < 3; f++) {
         double fx = -2.0 + f * 2.0;
-        int on = (f == 1) ? uia_flick(t * 1.7, 50 + f) : 1;
+        int on = (f == 1) ? 0 : 1;
         int stp = on ? RNDR_STEP_LIT : RNDR_STEP_DARK;
-        Mesh fix = mesh_box((Vec3){fx, 3.3, 0.0}, (Vec3){1.4, 0.08, 0.3}, RNDR_COL(HUE_GOLD, stp));
+        Mesh fix = mesh_box((Vec3){fx, 3.3, 0.0}, (Vec3){1.4, 0.08, 0.3}, RNDR_COL(HUE_WHITE, stp));
         rndr_draw(fix); mesh_free(&fix);
     }
+    (void)t;
 }
 
 void uia_scene_boss(double t) {

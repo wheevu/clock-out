@@ -4,3 +4,15 @@ char_kim 48 48 char_kim.blob
 icon_star 32 32 icon_star.blob
 fx_spark 32 31 fx_spark.blob
 card_frame 32 32 card_frame.blob
+idle_player_0 48 48 idle_player_0.blob
+idle_player_1 48 48 idle_player_1.blob
+idle_player_2 48 48 idle_player_2.blob
+idle_player_3 48 48 idle_player_3.blob
+idle_kim_0 48 48 idle_kim_0.blob
+idle_kim_1 48 48 idle_kim_1.blob
+idle_kim_2 48 48 idle_kim_2.blob
+idle_kim_3 48 48 idle_kim_3.blob
+idle_boss_0 48 48 idle_boss_0.blob
+idle_boss_1 48 48 idle_boss_1.blob
+idle_boss_2 48 48 idle_boss_2.blob
+idle_boss_3 48 48 idle_boss_3.blob

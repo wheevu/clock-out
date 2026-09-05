@@ -252,15 +252,11 @@ void ui_begin(void)
     memset(g_ov, 0, sizeof(g_ov));
 }
 
-void ui_present(const char *ppm_path)
+void ui_frame_rgb(uint8_t *out)
 {
     const uint8_t *fb = rndr_fb();
     const uint8_t *pal = rndr_palette();
-    if (!ppm_path) return;             /* skip write, still fine */
-
-    FILE *f = fopen(ppm_path, "wb");
-    if (!f) return;
-    fprintf(f, "P6\n%d %d\n255\n", RW, RH);
+    if (!out) return;
 
     for (int y = 0; y < RH; y++) {
         for (int x = 0; x < RW; x++) {
@@ -285,9 +281,20 @@ void ui_present(const char *ppm_path)
                 out_g = (uint8_t)(og + (uint32_t)sg * (255 - a) / 255);
                 out_b = (uint8_t)(ob + (uint32_t)sb * (255 - a) / 255);
             }
-            fputc(out_r, f); fputc(out_g, f); fputc(out_b, f);
+            *out++ = out_r; *out++ = out_g; *out++ = out_b;
         }
     }
+}
+
+void ui_present(const char *ppm_path)
+{
+    static uint8_t frame[RW*RH*3];
+    if (!ppm_path) return;
+    FILE *f = fopen(ppm_path, "wb");
+    if (!f) return;
+    ui_frame_rgb(frame);
+    fprintf(f, "P6\n%d %d\n255\n", RW, RH);
+    fwrite(frame, 1, sizeof frame, f);
     fclose(f);
 }
 

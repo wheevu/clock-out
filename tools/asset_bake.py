@@ -29,7 +29,7 @@ BAKED_DIR = os.path.join(REPO_ROOT, "assets", "baked")
 # Source Creative assets. Override with CLOCKOUT_SRC if your layout differs.
 SRC_ROOT = os.environ.get(
     "CLOCKOUT_SRC",
-    os.path.normpath(os.path.join(REPO_ROOT, "..", "Creative", "GameDev")),
+    os.path.expanduser("~/Creative/GameDev"),
 )
 
 # --- bake plan ---------------------------------------------------------------
@@ -88,6 +88,19 @@ PLAN = [
         "note": "card back used as a frame placeholder",
     },
 ]
+
+# The local character sheets have four front-facing idle frames in row zero.
+# Keep full frame bounds so animation has a stable origin and ground anchor.
+for role, source in (("player", "minji"), ("kim", "kazuha"), ("boss", "yunjin")):
+    for frame in range(4):
+        PLAN.append({
+            "key": f"idle_{role}_{frame}",
+            "src": f"characters/{source}.png",
+            "kind": "char",
+            "col": frame,
+            "pack": "LimeZu Modern Interiors - characters",
+            "note": f"front idle frame {frame}; credit LimeZu",
+        })
 
 
 def load_rgba(rel_path):
@@ -172,6 +185,9 @@ def write_credits(plan):
     lines.append(
         "They remain the property of their respective authors under the listed packs."
     )
+    lines.append("")
+    lines.append("LimeZu credit: https://limezu.itch.io (Modern Interiors)")
+    lines.append("Source pack licenses remain in Creative/GameDev/archive/.")
     lines.append("")
     for spec in plan:
         lines.append(

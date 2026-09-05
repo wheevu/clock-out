@@ -84,8 +84,8 @@ static void build_palette(void) {
     };
     /* saturation per column; white/charcoal are near-neutral to glow/fall away */
     static const double sat_col[16] = {
-        0.06, 0.62, 0.55, 0.78, 0.82, 0.05, 0.50, 0.62,
-        0.58, 0.45, 0.80, 0.42, 0.18, 0.52, 0.30, 0.40,
+        0.18, 0.38, 0.32, 0.64, 0.48, 0.08, 0.30, 0.28,
+        0.38, 0.28, 0.55, 0.24, 0.16, 0.32, 0.25, 0.20,
     };
 
     for (int i = 0; i < RNDR_NPAL; i++) {
@@ -94,7 +94,8 @@ static void build_palette(void) {
         double s = sat_col[col];
         double v_min = (col == 0 || col == 5) ? 0.08 : 0.12;
         double v_max = (col == 5) ? 1.00 : 0.90;
-        double v = v_min + (v_max - v_min) * (double)st / (double)(RNDR_PAL_STEP - 1);
+        double level = (double)st / (RNDR_PAL_STEP - 1);
+        double v = v_min + (v_max - v_min) * level * level;
         /* col 5 (백 white) has a narrow, cool hue so it stays clean */
         double h = hue_col[col] + ((col == 5) ? 0.0 : 0.0);
         uint8_t r, g, b;
@@ -230,12 +231,13 @@ static void raster_poly(const double cx[8], const double cy[8], const double cz[
                 double w1 = ((dx - bx) * (py - by) - (dy - by) * (px - bx)) / area;
                 double w2 = ((ax - dx) * (py - dy) - (ay - dy) * (px - dx)) / area;
                 if (w0 < -1e-4 || w1 < -1e-4 || w2 < -1e-4) continue;
-                double zp = w0 * az + w1 * bz + w2 * dz2;
+                /* Edge AB weights vertex D; BC weights A; CA weights B. */
+                double zp = w1 * az + w2 * bz + w0 * dz2;
                 int idx = y * RW + x;
                 if (zp < g_zb[idx]) {
                     g_zb[idx] = zp;
                     /* depth fog from perspective-correct view depth (1/w) */
-                    double vdepth = 1.0 / (w0 * ai + w1 * bi + w2 * di);
+                    double vdepth = 1.0 / (w1 * ai + w2 * bi + w0 * di);
                     double fog = (vdepth - RNDR_FOG_NEAR) / (RNDR_FOG_FAR - RNDR_FOG_NEAR);
                     if (fog < 0.0) fog = 0.0;
                     if (fog > 1.0) fog = 1.0;
@@ -353,7 +355,7 @@ Mesh mesh_plane(Vec3 center, Vec3 normal, double size, uint8_t color) {
     Vec3 n = vnorm(normal);
     /* pick a non-parallel axis to build a tangent basis */
     Vec3 ref = (fabs(n.y) < 0.99) ? (Vec3){0,1,0} : (Vec3){1,0,0};
-    Vec3 u = vnorm(vsub((Vec3){0,0,0}, vscale(n, vdot(n, ref))));
+    Vec3 u = vnorm(vsub(ref, vscale(n, vdot(n, ref))));
     if (vlen2(u) < 1e-9) u = (Vec3){1,0,0};
     Vec3 w = vnorm(vcross(n, u));
     double hs = size * 0.5;

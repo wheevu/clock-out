@@ -41,6 +41,8 @@ void ui_begin(void);
  * Pixels with overlay.a==255 fully replace; a==0 keep the scene;
  * 1..254 alpha-blend. path may be NULL (skip write). */
 void ui_present(const char *ppm_path);
+/* Copy the composited frame to caller-owned RW*RH*3 RGB bytes. */
+void ui_frame_rgb(uint8_t *out);
 
 /* ---- palette access (for pixel-level 3D scenes) ---- */
 const uint8_t *ui_scene_fb(void);   /* live palette buffer (RW*RH) */

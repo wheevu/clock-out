@@ -5,7 +5,44 @@ You are a junior engineer at 성광정보기술 who wakes at 3:17 AM to a buildi
 
 The commute is a dungeon, your manager is a boss fight (like in IRL), and the only exits are a letter of resignation or a coup that puts you in charge.
 
-The project runs on a hand-written 640x360 software renderer and a deterministic combat engine. This README shows a scripted vertical slice while the playable loop is still being built.
+The project runs on a hand-written 640x360 software renderer and a deterministic combat engine.
+A playable macOS slice now connects one office, two battles, a deck reward, and an ending.
+
+## Play the night
+
+Install SDL2 with `brew install sdl2`, then run `make play` from the repository root.
+The build uses the installed `sdl2-config` and a C compiler.
+No Python or original source packs are needed to play with the bundled baked assets.
+
+| Action | Keyboard | Controller |
+|---|---|---|
+| Select office hotspot, response, or card | Arrows or WASD | D-pad |
+| Inspect / confirm / use card | Enter or E | A |
+| End turn | Space | Y |
+| Back / pause / resume | Escape | B |
+| Pause / resume anywhere | | Start |
+| Fullscreen | F11 | |
+| Freeze animated effects | F2 | |
+| Mute selection cues | F3 | |
+| Quit | Close the window | |
+
+Window focus loss or disconnection of the active controller pauses play.
+Keyboard controls remain available when no controller is connected.
+Fullscreen preserves the 640x360 image with integer scaling and letterboxing.
+For reduced motion, press F2; this setting survives retry within the session.
+
+Explore by selecting one of four named hotspots, rather than freely walking.
+Talk to 김대리 before approaching the copier.
+Inspecting the attendance record raises 눈치 to 6 and exposes enemy intent.
+It also unlocks a response to 박과장 that removes 24 of his 100 HP and weakens his first two actions.
+The copier's reward adds exactly one card to the deck; remaining HP carries into the manager fight.
+Chairs resolve their physical collision damage when the turn ends.
+Defeat and victory both offer a fresh start.
+There is no save file in this slice.
+
+The story and card selection are deliberately small.
+Messenger, scheduling, the larger relationship simulation, free movement, and the four-act campaign are not wired into this playable night.
+The sections and GIFs below describe the older presentation gallery and the wider engine.
 
 <p align="center"> <img src="assets/shots/reel.gif" width=85%> </p>
 
@@ -16,7 +53,7 @@ The project runs on a hand-written 640x360 software renderer and a deterministic
 건물은 비뚤어졌고, 출근길은 던전이 되었고, 과장님은 보스전이 된다.
 출구는 사직서 하나, 아니면 관리자가 되는 것.
 
-## The loop
+## The wider design
 
 You explore the impossible office between encounters. The building rearranges itself after hours, as if the floor plan also hates overtime.
 Dialogue scenes serve up 눈치 (nunchi) choices: the socially aware line only appears when your read of the room is high enough. Say the wrong thing and enjoy the consequences.
@@ -25,7 +62,8 @@ Combat is deterministic. Cards telegraph intent, physics weapons like a thrown c
 The reward screen presents your planned post-combat deck choice, because even survival comes with paperwork.
 The boss is the manager, and beating them is the whole point of the slice.
 
-The ten clips are scripted captures of each screen. They present the loop screen by screen while the application main loop and input handler remain in development. Think of it as a polished elevator pitch, with your manager waiting between floors.
+The ten clips below are historical scripted captures of the presentation screens, not recordings of the new playable input loop.
+Think of them as the original elevator pitch, with your manager waiting between floors.
 Each screen draws real engine state onto the 640x360 renderer.
 
 ## Visuals
@@ -78,17 +116,19 @@ The current code has two clear parts: implemented engine behavior and presentati
 - Campaign flags: an act and flag state machine records story progress across scenes.
 - Physics weapons: cards emit spawn-body and apply-force events, so a thrown chair deals damage through the same impulse solver as the world.
 
-### Presentation-only screens
+### Legacy presentation screens
 
 The title, exploration, dialogue, choice, messenger, schedule, combat, reward, boss, and game-over screens live in `render/ui_app.H`.
 They draw real card and combat state plus authored presentation data onto the 640x360 renderer.
-An input loop and application run loop do not drive them yet, so the screens do not advance in response to player input.
-The explore, messenger, schedule, and reward screens sit on top of the implemented subsystems but are not wired to live game flow.
+The macOS host uses `render/slice_ui.HC` and `game/slice.HC` instead of driving this gallery.
+The old messenger and schedule screens remain authored presentation data rather than live game flow.
 
 ## What is implemented
 
 | Subsystem | Module | Status |
 |-----------|--------|--------|
+| Playable night | `game/slice.HC`, `render/slice_ui.HC` | title, hotspot exploration, clue, dialogue, two battles, reward, ending, pause and retry |
+| macOS host | `tools/play.HC` | SDL2 window, integer scaling, keyboard, controller hotplug, queued audio |
 | Math / RNG / events / strings | `core/` | done (seeded xorshift, event queue, UTF-8 to jamo tokenizer) |
 | Hangul compose + font + two-beol IME | `korean/` | done (jamo bitmaps, syllable composition, deliberate corruption flaw) |
 | Software 3D renderer | `render/` | done (640x360, z-buffer, Lambert shading, depth fog, dancheong palette, PPM output, wireframe) |
@@ -115,7 +155,28 @@ make check
 
 Requires a C99 compiler (`cc`/`clang`/`gcc`). All suites print PASS.
 
+`make check-slice` runs the targeted playable-state tests.
+They cover both dialogue paths, real combat victories, deterministic replay of inputs, defeat, retry, pause, reward uniqueness, locked exits, and read-only rendering.
+They also capture eleven playable screens to `/tmp/clockout-slice-*.ppm` and compare host RGB output against the PPM compositor.
+Every gallery capture follows legal game inputs, so boss health, carried cards, and the observed clue match the playable journey.
+
+`make bin/clock-out && bin/clock-out --smoke` runs a bounded native-window journey from title to exit through injected SDL keyboard events.
+It exits automatically and closes its own SDL resources.
+It does not prove physical controller compatibility or audible sound quality.
+`bin/clock-out --help` lists host controls and the smoke option.
+
+There is no separate lint configuration; builds use `-Wall -Wextra`.
+
 ## Capture the clips
+
+`make slice-shots` runs the playable tests and uses Pillow to generate all eleven `assets/shots/playable-*.png` images and three GIF reels in the README.
+The title, office, attendance clue, coworker, combat, reward, manager response, boss, exit, defeat, and pause screens are all included.
+The reels are `playable-office.gif`, `playable-combat.gif`, and `playable-night.gif`.
+They animate authored state changes, not continuous movement.
+An ignored `bin/slice-contact.png` lets you inspect the entire gallery at once.
+Install Pillow with `python3 -m pip install Pillow` if it is not already available in your Python environment.
+
+The original scripted GIF gallery can still be regenerated separately:
 
 ```
 make gif
@@ -130,16 +191,30 @@ including `reel.gif` and the ten clips shown above.
 - The physics to combat bridge uses events: cards emit `SPAWN_BODY` / `APPLY_FORCE` and never touch the world directly. Collision impulses become `DEAL_DAMAGE` events routed by the body owner entity id.
 - The logic is a 1:1 port of the HolyC/TempleOS design. The graphics, input, and file shims differ, while the structs, signatures, and algorithms stay identical.
 
+The playable state machine accepts discrete `SliceInput` commands and owns transitions and rewards.
+The SDL host forwards input and presents a caller-owned RGB frame through `ui_frame_rgb`.
+Drawing reads game state without advancing combat or the random stream.
+SDL dependencies stay out of the headless engine and test builds.
+The `.HC` extension preserves the project's HolyC-flavored source style; macOS executes a C-compiled binary, not the TempleOS HolyC compiler.
+
 ## Scope
 
 This slice leaves the following work for later:
 
 - Networking, convex-hull physics, full Unicode, skeletal animation, PBR, multithreading, and an ECS.
 - The full campaign, Acts II through IV, every NPC, and multiple endings still need to be authored as DSL data. The engine supports them.
-- An application main loop, input handling, screen transitions, and live wiring for exploration, messenger, schedule, and rewards remain to be built.
+- Free walking, live messenger and schedule integration, save/load for the playable slice, and TempleOS hosting remain unimplemented.
 - The third-party character and interior art comes from the credits below. It ships for local development and README preview only.
 
 ## Credits
+
+`tools/asset_bake.py` reads `~/Creative/GameDev` by default, or the folder named by `CLOCKOUT_SRC`.
+Run it with Python and Pillow only when rebuilding sprites.
+It now includes four idle frames for each existing character, with stable feet anchors in the playable compositor.
+Office furniture is simple 3D geometry; the LimeZu office packs informed its proportions and details rather than being pasted as top-down sprites into a perspective camera.
+`python3 tools/gen_glyphs.py` regenerates the bundled 16px Korean glyph atlas when copy changes.
+Original source packs stay outside this repository.
+The local Modern Interiors license requires LimeZu credit and prohibits redistribution of the asset pack; verify distribution terms before publishing derived asset bundles.
 
 The character and interior art bundled with this repo comes from the credits below. It is included for local development and README preview only.
 

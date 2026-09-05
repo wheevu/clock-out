@@ -17,10 +17,25 @@ NAR  = $(wildcard narrative/*.HC)
 CON  = $(wildcard content/*.HC)
 
 ALL = $(CORE) $(KR) $(REN) $(PHY) $(GAME) $(NAR) $(CON)
+HEADERS = $(wildcard core/*.H korean/*.H korean/*.h render/*.H physics/*.H game/*.H narrative/*.H include/*.HC)
 
-.PHONY: all integration check shots gif clean
+.PHONY: all integration check check-slice slice-shots play shots gif clean
 
 all: integration
+
+# SDL stays in the host, never in the headless engine or its tests.
+$(BIN)/clock-out: tools/play.HC $(ALL) $(HEADERS) | $(BIN)
+	$(CC) $(CFLAGS) $$(sdl2-config --cflags) -o $@ tools/play.HC $(ALL) $$(sdl2-config --libs) $(LIBS)
+
+play: $(BIN)/clock-out
+	./$(BIN)/clock-out
+
+check-slice: | $(BIN)
+	$(CC) $(CFLAGS) -o $(BIN)/slice-test tests/slice_test.HC $(ALL) $(LIBS)
+	./$(BIN)/slice-test
+
+slice-shots: check-slice
+	python3 tools/slice_shots.py
 
 $(BIN):
 	mkdir -p $(BIN)
@@ -42,6 +57,7 @@ check: integration
 	@echo "=== narrative ===" && ./$(BIN)/nt
 	$(CC) $(CFLAGS) $(LIBS) -o $(BIN)/ut  tests/ui_app_test.HC $(ALL)
 	@echo "=== ui_app smoke ===" && ./$(BIN)/ut
+	$(MAKE) check-slice
 	@echo "=== linguist hint ===" && (command -v github-linguist >/dev/null && github-linguist 2>/dev/null || echo "HolyC sources: $(words $(ALL)) files")
 
 # ---- visuals ----
