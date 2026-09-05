@@ -69,5 +69,6 @@ These are native-resolution captures reached through the playable state machine,
 </table>
 
 Rebuild the full gallery and these three GIF reels with `make slice-shots`.
+
 Office assets: [LimeZu](https://limezu.itch.io).
 Character art by me (Josh).
